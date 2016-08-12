@@ -1,0 +1,230 @@
+# For more information on configuration, see:
+#   * Official English Documentation: http://nginx.org/en/docs/
+#   * Official Russian Documentation: http://nginx.org/ru/docs/
+
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile            on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+    keepalive_timeout   65;
+    types_hash_max_size 2048;
+
+    include             /etc/nginx/mime.types;
+    default_type        application/octet-stream;
+
+    # Load modular configuration files from the /etc/nginx/conf.d directory.
+    # See http://nginx.org/en/docs/ngx_core_module.html#include
+    # for more information.
+    include /etc/nginx/conf.d/*.conf;
+
+    server {
+        listen       80 default_server;
+        #listen       [::]:80 default_server;
+        server_name  xxx.xxx.xxx;
+        #root         /usr/share/nginx/html/yii-application/frontend/web/;
+        root         /usr/share/nginx/html/yii2-starter-kit/frontend/web/;
+		index index.php index.html index.htm;
+
+        # Load configuration files for the default server block.
+        include /etc/nginx/default.d/*.conf;
+
+			   location / {
+					   # Redirect everything that isn't a real file to index.php
+					   #try_files $uri $uri/ /index.php?$is_args$args;
+					   try_files $uri $uri/ /index.php?$args;
+
+						 #autoindex  on;
+						 if (!-e $request_filename){
+							rewrite ^/(.*) /index.php?r=$1 last;
+						}
+					
+
+					   }
+
+
+		   location ~ \.php$ {
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
+            # With php5-fpm:
+            fastcgi_pass unix:/run/php-fpm/php5-fpm.sock;
+            fastcgi_index index.php;
+            include fastcgi.conf;
+		}
+
+	
+		
+	
+		location /phpMyAdmin {
+			alias /usr/share/nginx/html/phpMyAdmin;
+			index index.php index.html index.htm;
+		}
+		
+		location ~ /phpMyAdmin/.*\.php$ {
+			fastcgi_pass    127.0.0.1:9000;
+			fastcgi_index   index.php;
+			fastcgi_param   SCRIPT_FILENAME /usr/share/nginx/html/$uri;
+			include     fastcgi_params;
+		}
+
+		
+        error_page 404 /404.html;
+            location = /40x.html {
+        }
+
+        error_page 500 502 503 504 /50x.html;
+            location = /50x.html {
+        }
+    }
+	
+	
+				   server {
+				   charset utf-8;
+				   client_max_body_size 128M;
+
+				   listen 80; ## listen for ipv4
+				   #listen [::]:80 default_server ipv6only=on; ## listen for ipv6
+
+				   server_name back.pi.martnyc.com;
+				   root        /usr/share/nginx/html/yii-application/frontend/web/;
+				   index       index.php;
+
+				   access_log  /usr/share/nginx/html/yii-application/log/frontend-access.log;
+				   error_log   /usr/share/nginx/html/yii-application/log/frontend-error.log;
+
+				   location / {
+					   # Redirect everything that isn't a real file to index.php
+					   try_files $uri $uri/ /index.php?$is_args$args;
+					   #try_files $uri $uri/ /index.php?$args;
+
+						#if (-f $request_filename/index.php){
+						#	rewrite (.*) $1/index.php;
+						#}
+						#if (!-f $request_filename){
+						#	rewrite (.*) /index.php last;
+						#}						
+						
+						 #autoindex  on;
+						 if (!-e $request_filename){
+							rewrite ^/(.*) /index.php?r=$1 last;
+						}
+			
+						root   /usr/share/nginx/html/yii-application/frontend/web/;  
+						index  index.php  index.html  index.htm;  
+
+					   }
+					   
+					    #location ~ /(protected|framework|nbproject|themes/\w+/views|index-test\.php) {  
+						#	deny all;  
+						#	# for production  
+						#	internal;  
+						#	log_not_found off;  
+						#	access_log off;  
+						#}   
+					   
+					    location ~ /(\.svn|\.git|\.ht|\.DS) {  
+								deny all;  
+								internal;  
+						}  
+											   
+						location /usr/share/nginx/html/yii-application/frontend/web/
+						{ 
+							if (!-e $request_filename)
+							{ 
+								rewrite ^(.*)$ /index.php; 
+							} 
+							
+						}
+					   
+
+				   # uncomment to avoid processing of calls to non-existing static files by Yii
+				   #location ~ \.(js|css|png|jpg|gif|swf|ico|pdf|mov|fla|zip|rar)$ {
+				   #    try_files $uri =404;
+				   #}
+				   #error_page 404 /404.html;
+
+				   # deny accessing php files for the /assets directory
+				   location ~ ^/assets/.*\.php$ {
+					   deny all;
+				   }
+
+				   location ~ \.php$ {
+					   include fastcgi_params;
+					   fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+					   fastcgi_pass 127.0.0.1:9000;
+					   #fastcgi_pass unix:/var/run/php5-fpm.sock;
+					   try_files $uri =404;
+					   
+					   	#if (!-f $request_filename){  
+						#rewrite (.*) /index.php;  
+						#}  
+				   }
+
+				   location ~* /\. {
+					   deny all;
+				   }
+				   
+		   }
+
+			   server {
+				   charset utf-8;
+				   client_max_body_size 128M;
+
+				   listen 80; ## listen for ipv4
+				   #listen [::]:80 default_server ipv6only=on; ## listen for ipv6
+
+				   server_name backend.dev;
+				   root        /usr/share/nginx/html/yii-application/backend/web/;
+				   index       index.php;
+
+				   access_log  /usr/share/nginx/html/yii-application/log/backend-access.log;
+				   error_log   /usr/share/nginx/html/yii-application/log/backend-error.log;
+
+				   location / {
+					   # Redirect everything that isn't a real file to index.php
+					   try_files $uri $uri/ /index.php$is_args$args;
+				   }
+
+				   # uncomment to avoid processing of calls to non-existing static files by Yii
+				   #location ~ \.(js|css|png|jpg|gif|swf|ico|pdf|mov|fla|zip|rar)$ {
+				   #    try_files $uri =404;
+				   #}
+				   #error_page 404 /404.html;
+
+				   # deny accessing php files for the /assets directory
+				   location ~ ^/assets/.*\.php$ {
+					   deny all;
+				   }
+
+				   location ~ \.php$ {
+					   include fastcgi_params;
+					   fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+					   fastcgi_pass 127.0.0.1:9000;
+					   #fastcgi_pass unix:/var/run/php5-fpm.sock;
+					   try_files $uri =404;
+				   }
+
+				   location ~* /\. {
+					   deny all;
+				   }
+			   }
+				
+	
+	
+	include /etc/nginx/sites-enabled/*.conf;
+	server_names_hash_bucket_size 64;
+
+}
