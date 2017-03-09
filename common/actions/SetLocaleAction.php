@@ -68,7 +68,10 @@ class SetLocaleAction extends Action
     public function run($locale)
     {
         if (!is_array($this->locales) || !in_array($locale, $this->locales, true)) {
-            throw new InvalidParamException('Unacceptable locale');
+            return Yii::$app->response->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
+			//throw new InvalidParamException('Unacceptable locale');
+            //change this if user manually input some local not listed then it will give out error
+            
         }
         $cookie = new Cookie([
             'name' => $this->localeCookieName,
